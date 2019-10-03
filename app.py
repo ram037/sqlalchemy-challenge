@@ -106,23 +106,33 @@ def tobs():
 
 
 @app.route("/api/v1.0/<start>")
-def tobs():
+def start(start_date):
+    return session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start_date).all()
     """Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range. 
     When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date. 
     When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive."""
+
+    # Run the query required
+    session = Session(engine)
+    results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+              filter(Measurement.date >= start_date).all()
+            
+    return jsonify(start)
+
+
 ##### Uncomment out to pick up where left off    
+# @app.route("/api/v1.0/<start>")
+# def start(start_date, end_date):
+#     return session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+#         filter(Measurement.date >= start_date).all()
+#     """Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range. 
+#     When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date. 
+#     When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive."""
+
 #     # Run the query required
 #     session = Session(engine)
-#     year_ago_date = dt.date(2017,8,23) - dt.timedelta(days=365)
-#     results = session.query(Measurement.date, Measurement.tobs).\
-#               filter(Measurement.date >= year_ago_date).all()
-    
-#     # Create a dictionary from the row data and append to dates
-#     yr_tobs = []
-#     for tobs in results:
-#         tobs_dict = {}
-#         tobs_dict["date"] = date
-#         tobs_dict["tobs"] = tobs
-#         yr_tobs.append(tobs_dict)
-        
-#     return jsonify(yr_tobs)
+#     results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+#               filter(Measurement.date >= start_date).all()
+            
+#     return jsonify(start)
