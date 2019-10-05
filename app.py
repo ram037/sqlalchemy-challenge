@@ -1,5 +1,5 @@
 import numpy as np
-
+import datetime as dt
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
@@ -11,7 +11,7 @@ from flask import Flask, jsonify
 #################################################
 # Database Setup
 #################################################
-engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+engine = create_engine("sqlite:///Resources/hawaii.sqlite?check_same_thread=False")
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -38,7 +38,7 @@ app = Flask(__name__)
 @app.route("/")
 def welcome():
     return (
-        f"Welcome to Omar's sqlalchemy-challenge API!<br/>"
+        f"Welcome to my sqlalchemy Challenge API page<br/>"
         f"Available Routes:<br/>"
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
@@ -55,54 +55,47 @@ def precipitation():
     # Run the query required
     results = session.query(Measurement.date, Measurement.prcp, Measurement.station).all()
     
-    # Create a dictionary from the row data and append to dates
+    # Create a dictionary from the data
     prcp_dict = {}
     for result in results:
         date = result[0]
         prcp = result[1]
         station = result[2]
         prcp_dict[station + "-" + date] = prcp
-        
     return jsonify(prcp_dict)
 
-# @app.route("/api/v1.0/stations")
-# def stations():
-#     """Return a JSON list of stations from the dataset"""
-#     # Run the query required
-#     session = Session(engine)
-#     results = session.query(Station.station, Station.name).all()
+@app.route("/api/v1.0/stations")
+def stations():
+    """Return a JSON list of stations from the dataset"""
+    # Run the query required
+    results = session.query(Station.station, Station.name).all()
     
-#     # Create a dictionary from the row data and append to stations
-#     all_stations = []
-#     for station in results:
-#         station_dict = {}
-#         station_dict["station"] = station
-#         station_dict["name"] = name
-#         all_stations.append(station_dict)
-        
-#     return jsonify(all_stations)
+    # Create a dictionary from the data
+    station_dict = {}
+    for result in results:
+        station = result[0]
+        name = result[1]
+        station_dict[station] = name
+    return jsonify(station_dict)
 
 
-# @app.route("/api/v1.0/tobs")
-# def tobs():
-#     """query for the dates and temperature observations from a year from the last data point.
-#     Return a JSON list of Temperature Observations (tobs) for the previous year."""
-#     # Run the query required
-#     session = Session(engine)
-#     year_ago_date = dt.date(2017,8,23) - dt.timedelta(days=365)
-#     results = session.query(Measurement.date, Measurement.tobs).\
-#               filter(Measurement.date >= year_ago_date).all()
+@app.route("/api/v1.0/tobs")
+def tobs():
+    """query for the dates and temperature observations from a year from the last data point.
+    Return a JSON list of Temperature Observations (tobs) for the previous year."""
+    # Run the query required
+    year_ago_date = dt.date(2017,8,23) - dt.timedelta(days=365)
+    results = session.query(Measurement.station, Measurement.date, Measurement.tobs).filter(Measurement.date >= year_ago_date).all()
     
-#     # Create a dictionary from the row data and append to dates
-#     yr_tobs = []
-#     for tobs in results:
-#         tobs_dict = {}
-#         tobs_dict["date"] = date
-#         tobs_dict["tobs"] = tobs
-#         yr_tobs.append(tobs_dict)
+    # Create a dictionary from the data
+    tobs_dict = {}
+    for result in results:
+        station = result[0]
+        date = result[1]
+        tobs = result[2]
+        tobs_dict [station + "-" + date] = tobs
+    return jsonify(tobs_dict)
         
-#     return jsonify(yr_tobs)
-
 @app.route("/api/v1.0/temp/<start_date>")
 @app.route("/api/v1.0/temp/<start_date>/<end_date>")
 def stats(start_date, end_date=None):
@@ -112,38 +105,6 @@ def stats(start_date, end_date=None):
         return jsonify(results)
     results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all()
     return jsonify(results)
-
-# @app.route("/api/v1.0/<start>")
-# def start(start_date):
-#     return session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-#         filter(Measurement.date >= start_date).all()
-#     """Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range. 
-#     When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date. 
-#     When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive."""
-
-#     # Run the query required
-#     session = Session(engine)
-#     results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-#               filter(Measurement.date >= start_date).all()
-            
-#     return jsonify(start)
-
-
-##### Uncomment out to pick up where left off    
-# @app.route("/api/v1.0/<start>")
-# def start(start_date, end_date):
-#     return session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-#         filter(Measurement.date >= start_date).all()
-#     """Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range. 
-#     When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date. 
-#     When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive."""
-
-#     # Run the query required
-#     session = Session(engine)
-#     results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-#               filter(Measurement.date >= start_date).all()
-            
-#     return jsonify(start)
 
 if __name__ == '__main__':
     app.run(debug=True)
